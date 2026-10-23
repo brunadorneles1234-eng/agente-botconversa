@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório {{ client_name }} — {{ date }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; font-size: 11pt; }
+    header { border-bottom: 3px solid #16213e; padding-bottom: 12px; margin-bottom: 20px; }
+    header h1 { font-size: 18pt; color: #16213e; }
+    header p { color: #666; font-size: 10pt; margin-top: 4px; }
+    .kpi-row { display: flex; gap: 16px; margin-bottom: 20px; }
+    .kpi { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; }
+    .kpi .label { font-size: 8pt; color: #666; text-transform: uppercase; }
+    .kpi .value { font-size: 20pt; font-weight: 700; color: #16213e; }
+    h2 { font-size: 12pt; color: #16213e; margin: 20px 0 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 16px; }
+    th { text-align: left; padding: 6px 10px; background: #f8f9fa; font-weight: 600; border-bottom: 2px solid #dee2e6; }
+    td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
+    .badge { padding: 1px 6px; border-radius: 4px; font-size: 9pt; }
+    .badge-red { background: #fde8e8; color: #c0392b; }
+    .badge-orange { background: #fef3e2; color: #e67e22; }
+    .footer { margin-top: 32px; font-size: 8pt; color: #aaa; border-top: 1px solid #eee; padding-top: 8px; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>{{ client_name }}</h1>
+  <p>Relatório de Atendimento — {{ date }}{% if period_days > 1 %} (últimos {{ period_days }} dias){% endif %}</p>
+</header>
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="label">Conversas</div>
+    <div class="value">{{ metrics.total_conversations }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Resolvidas pela IA</div>
+    <div class="value">{{ metrics.ai_resolved }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Alertas</div>
+    <div class="value">{{ alerts|length }}</div>
+  </div>
+</div>
+
+{% if include_units and metrics.by_unit %}
+<h2>Por Unidade</h2>
+<table>
+  <thead><tr><th>Unidade</th><th>Conversas</th><th>Tempo médio IA</th></tr></thead>
+  <tbody>
+    {% for unit, data in metrics.by_unit.items() %}
+    <tr>
+      <td>{{ unit }}</td>
+      <td>{{ data.total }}</td>
+      <td>{% if data.avg_ai_response_seconds %}{{ (data.avg_ai_response_seconds / 60) | round(1) }}min{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if include_attendants and metrics.by_attendant %}
+<h2>Por Atendente</h2>
+<table>
+  <thead><tr><th>ID Atendente</th><th>Conversas</th><th>Tempo médio</th></tr></thead>
+  <tbody>
+    {% for att_id, data in metrics.by_attendant.items() %}
+    <tr>
+      <td>{{ att_id }}</td>
+      <td>{{ data.total }}</td>
+      <td>{% if data.avg_response_seconds %}{{ (data.avg_response_seconds / 60) | round(1) }}min{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if include_alerts and alerts %}
+<h2>Alertas do Período</h2>
+<table>
+  <thead><tr><th>ID</th><th>Tipo</th><th>Descrição</th></tr></thead>
+  <tbody>
+    {% for alert in alerts %}
+    <tr>
+      <td>{{ alert.anon_id }}</td>
+      <td>
+        {% if alert.tipo in ['ia_lenta', 'equipe_lenta'] %}<span class="badge badge-orange">{{ alert.tipo }}</span>
+        {% else %}<span class="badge badge-red">{{ alert.tipo }}</span>{% endif %}
+      </td>
+      <td>{{ alert.descricao }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="footer">Gerado pelo Agente Botconversa — dados anonimizados conforme LGPD</div>
+
+<script>window.onload = function() { window.print(); }</script>
+</body>
+</html>

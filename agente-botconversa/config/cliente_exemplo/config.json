@@ -1,0 +1,14 @@
+{
+  "nome_cliente": "Cliente Exemplo",
+  "botconversa_api_key": "SUA_CHAVE_AQUI",
+  "tempo_alerta_ia_minutos": 5,
+  "tempo_alerta_equipe_minutos": 10,
+  "unidades": {
+    "fluxo_abc123": "Unidade Centro",
+    "fluxo_def456": "Unidade Norte"
+  },
+  "atendentes": {
+    "user_001": "Unidade Centro",
+    "user_002": "Unidade Norte"
+  }
+}

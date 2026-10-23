@@ -1,0 +1,8 @@
+{
+  "nome_cliente": "Cliente Teste",
+  "botconversa_api_key": "key_test_123",
+  "tempo_alerta_ia_minutos": 5,
+  "tempo_alerta_equipe_minutos": 10,
+  "unidades": {"fluxo_x": "Unidade X"},
+  "atendentes": {"user_t": "Unidade X"}
+}

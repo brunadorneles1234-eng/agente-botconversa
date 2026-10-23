@@ -1,6 +1,6 @@
 {
   "nome_cliente": "Cliente Exemplo",
-  "botconversa_api_key": "SUA_CHAVE_AQUI",
+  "botconversa_api_key": "9f637aba-8709-4116-a834-3f92276676a7",
   "tempo_alerta_ia_minutos": 5,
   "tempo_alerta_equipe_minutos": 10,
   "unidades": {

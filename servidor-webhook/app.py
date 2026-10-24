@@ -179,7 +179,8 @@ def calcular_tempos(transferencias: list, atendimentos: list) -> float | None:
     return round(sum(tempos) / len(tempos), 1) if tempos else None
 
 
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

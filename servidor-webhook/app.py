@@ -142,12 +142,21 @@ def calcular_metricas(eventos: list) -> dict:
         elif e["evento"] == "equipe_assumiu":
             por_unidade[u]["atendimentos"] += 1
 
-    tempos_atendimento = calcular_tempos(transferencias, atendimentos)
+    tempos_espera = calcular_tempos_par(transferencias, atendimentos)
+    tempos_atendimento = calcular_tempos_par(atendimentos, encerrados)
 
     por_atendente = {}
     for e in atendimentos:
         att = e.get("atendente") or "desconhecido"
-        por_atendente[att] = por_atendente.get(att, 0) + 1
+        if att not in por_atendente:
+            por_atendente[att] = {"atendimentos": 0, "avg_tempo_atendimento_segundos": None}
+        por_atendente[att]["atendimentos"] += 1
+
+    # tempo médio de atendimento por atendente
+    for att in por_atendente:
+        ass = [e for e in atendimentos if (e.get("atendente") or "desconhecido") == att]
+        enc = [e for e in encerrados if (e.get("atendente") or "desconhecido") == att]
+        por_atendente[att]["avg_tempo_atendimento_segundos"] = calcular_tempos_par(ass, enc)
 
     return {
         "total_confirmados": len(confirmados),
@@ -155,23 +164,24 @@ def calcular_metricas(eventos: list) -> dict:
         "total_transferencias": len(transferencias),
         "total_atendimentos": len(atendimentos),
         "total_encerrados": len(encerrados),
+        "avg_tempo_espera_segundos": tempos_espera,
         "avg_tempo_atendimento_segundos": tempos_atendimento,
         "por_unidade": por_unidade,
         "por_atendente": por_atendente,
     }
 
 
-def calcular_tempos(transferencias: list, atendimentos: list) -> float | None:
-    """Calcula tempo médio entre bot_parou e equipe_assumiu por anon_id."""
-    paradas = {e["anon_id"]: e["timestamp"] for e in transferencias}
+def calcular_tempos_par(eventos_inicio: list, eventos_fim: list) -> float | None:
+    """Calcula tempo médio entre dois tipos de evento pelo mesmo anon_id."""
+    inicio_por_id = {e["anon_id"]: e["timestamp"] for e in eventos_inicio}
     tempos = []
-    for e in atendimentos:
+    for e in eventos_fim:
         anon_id = e["anon_id"]
-        if anon_id in paradas:
+        if anon_id in inicio_por_id:
             try:
-                t_parou = datetime.fromisoformat(paradas[anon_id].replace("Z", "+00:00"))
-                t_assumiu = datetime.fromisoformat(e["timestamp"].replace("Z", "+00:00"))
-                diff = (t_assumiu - t_parou).total_seconds()
+                t_inicio = datetime.fromisoformat(inicio_por_id[anon_id].replace("Z", "+00:00"))
+                t_fim = datetime.fromisoformat(e["timestamp"].replace("Z", "+00:00"))
+                diff = (t_fim - t_inicio).total_seconds()
                 if 0 < diff < 86400:
                     tempos.append(diff)
             except Exception:

@@ -1,14 +1,18 @@
 {
-  "nome_cliente": "Cliente Exemplo",
+  "nome_cliente": "Neuropsico Centro",
   "botconversa_api_key": "9f637aba-8709-4116-a834-3f92276676a7",
+  "webhook_server_url": "https://agente-botconversa.onrender.com",
+  "webhook_secret": "NeuropsicoWebhook2024!",
+  "webhook_cliente_id": "neuropsico",
   "tempo_alerta_ia_minutos": 5,
   "tempo_alerta_equipe_minutos": 10,
   "unidades": {
-    "fluxo_abc123": "Unidade Centro",
-    "fluxo_def456": "Unidade Norte"
+    "parque": "Parque",
+    "matriz": "Matriz",
+    "life": "Life",
+    "sul": "Sul"
   },
   "atendentes": {
-    "user_001": "Unidade Centro",
-    "user_002": "Unidade Norte"
+    "Michelle": "Parque"
   }
 }

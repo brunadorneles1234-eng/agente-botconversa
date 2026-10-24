@@ -12,7 +12,7 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(__file__))
 
 from src.config_loader import load_config, list_clients, ConfigError
-from src.collector import collect_conversations, CollectorError
+from src.collector import collect_conversations, collect_webhook_metrics, CollectorError
 from src.analyzer import analyze
 from src.alert_detector import detect_alerts
 from src.dashboard_generator import generate_dashboard
@@ -65,12 +65,31 @@ def process_client(client_folder: str, yesterday: str) -> str | None:
         conversations = collect_conversations(config["botconversa_api_key"], yesterday)
         metrics = analyze(conversations, config)
         alerts = detect_alerts(conversations, config)
+
+        # Enriquece métricas com dados de tempo do servidor webhook
+        webhook_url = config.get("webhook_server_url")
+        webhook_secret = config.get("webhook_secret")
+        webhook_cliente = config.get("webhook_cliente_id", client_name)
+        if webhook_url and webhook_secret:
+            try:
+                wh = collect_webhook_metrics(webhook_url, webhook_secret, webhook_cliente, yesterday)
+                metrics["avg_tempo_espera_segundos"] = wh.get("avg_tempo_espera_segundos")
+                metrics["avg_tempo_atendimento_segundos"] = wh.get("avg_tempo_atendimento_segundos")
+                metrics["webhook_por_unidade"] = wh.get("por_unidade", {})
+                metrics["webhook_por_atendente"] = wh.get("por_atendente", {})
+                metrics["total_confirmados"] = wh.get("total_confirmados", 0)
+                metrics["total_encerrados"] = wh.get("total_encerrados", 0)
+            except CollectorError as e:
+                print(f"  Aviso: dados de tempo não disponíveis — {e}")
+
         history = load_history(client_name)
 
         save_metrics(client_name, yesterday, {
             "total_conversations": metrics["total_conversations"],
             "ai_resolved": metrics["ai_resolved"],
             "transferred_to_team": metrics["transferred_to_team"],
+            "avg_tempo_espera_segundos": metrics.get("avg_tempo_espera_segundos"),
+            "avg_tempo_atendimento_segundos": metrics.get("avg_tempo_atendimento_segundos"),
         })
 
         report_dir = os.path.join(REPORTS_DIR, client_name)

@@ -44,20 +44,29 @@
 <div class="container">
 
   <!-- KPIs -->
-  <div class="kpi-row">
+  <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr);">
     <div class="kpi">
-      <div class="label">Conversas</div>
-      <div class="value">{{ metrics.total_conversations }}</div>
-      <div class="sub">{{ metrics.ai_resolved }} resolvidas pela IA · {{ metrics.transferred_to_team }} transferidas</div>
+      <div class="label">Confirmações</div>
+      <div class="value">{{ metrics.total_confirmados or metrics.total_conversations }}</div>
+      <div class="sub">{{ metrics.total_encerrados or 0 }} atendimentos encerrados</div>
     </div>
     <div class="kpi">
-      <div class="label">Tempo médio IA</div>
+      <div class="label">Espera até atendente</div>
       <div class="value">
-        {% if metrics.avg_ai_response_seconds %}
-          {{ (metrics.avg_ai_response_seconds / 60) | round(1) }}min
+        {% if metrics.avg_tempo_espera_segundos %}
+          {{ (metrics.avg_tempo_espera_segundos / 60) | round(1) }}min
         {% else %}—{% endif %}
       </div>
-      <div class="sub">tempo de resposta da IA</div>
+      <div class="sub">bot parou → equipe assumiu</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Tempo de atendimento</div>
+      <div class="value">
+        {% if metrics.avg_tempo_atendimento_segundos %}
+          {{ (metrics.avg_tempo_atendimento_segundos / 60) | round(1) }}min
+        {% else %}—{% endif %}
+      </div>
+      <div class="sub">equipe assumiu → encerrado</div>
     </div>
     <div class="kpi">
       <div class="label">Alertas</div>
@@ -99,10 +108,29 @@
   <!-- Por Atendente -->
   <div class="card">
     <h2>Por Atendente</h2>
-    {% if metrics.by_attendant %}
+    {% if metrics.webhook_por_atendente %}
     <table>
       <thead>
-        <tr><th>ID Atendente</th><th>Conversas</th><th>Tempo médio</th></tr>
+        <tr><th>Atendente</th><th>Atendimentos</th><th>Tempo médio atendimento</th></tr>
+      </thead>
+      <tbody>
+        {% for nome, data in metrics.webhook_por_atendente.items() %}
+        <tr>
+          <td>{{ nome }}</td>
+          <td>{{ data.atendimentos }}</td>
+          <td>
+            {% if data.avg_tempo_atendimento_segundos %}
+              {{ (data.avg_tempo_atendimento_segundos / 60) | round(1) }}min
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% elif metrics.by_attendant %}
+    <table>
+      <thead>
+        <tr><th>Atendente</th><th>Conversas</th><th>Tempo médio</th></tr>
       </thead>
       <tbody>
         {% for att_id, data in metrics.by_attendant.items() %}

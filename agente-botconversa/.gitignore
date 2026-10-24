@@ -1,0 +1,13 @@
+# Configurações reais de clientes (contêm API keys e secrets)
+config/*/config.json
+!config/cliente_exemplo/config.json
+
+# Dados e relatórios gerados
+dados/
+relatorios/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

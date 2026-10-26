@@ -39,6 +39,13 @@ def test_category_alert_sem_limite_retorna_none(tmp_db):
     assert alert is None
 
 
+def test_category_alert_limite_zero_retorna_none(tmp_db):
+    init_db(tmp_db)
+    set_limit(tmp_db, "fast_food", 0.0)
+    alert = check_category_alert(tmp_db, "fast_food", 50.0, 2026, 10)
+    assert alert is None
+
+
 def test_format_dividas_lista(tmp_db):
     init_db(tmp_db)
     add_divida(tmp_db, "Consignado Caixa", 12000.0, 400.0, 30, 5)

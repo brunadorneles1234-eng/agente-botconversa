@@ -98,7 +98,7 @@ def format_dividas(db_path: str) -> str:
 
 def check_category_alert(db_path: str, categoria: str, novo_valor: float, year: int, month: int) -> str | None:
     limite = get_limit(db_path, categoria)
-    if limite is None:
+    if limite is None or limite <= 0:
         return None
 
     total_atual = get_category_total_month(db_path, categoria, year, month)

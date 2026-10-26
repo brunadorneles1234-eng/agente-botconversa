@@ -1,0 +1,6 @@
+python-telegram-bot==20.7
+anthropic==0.25.2
+APScheduler==3.10.4
+python-dotenv==1.0.1
+pytest==8.1.1
+pytest-asyncio==0.23.6

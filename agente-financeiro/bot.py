@@ -17,11 +17,13 @@ from telegram.ext import (
 import config
 from config import (
     TELEGRAM_BOT_TOKEN,
+    TELEGRAM_GROUP_ID,
     ANTHROPIC_API_KEY,
     DB_PATH,
     USER_MAP,
     VALID_CATEGORIES,
 )
+from scheduler import setup_scheduler
 from database import (
     init_db,
     add_transaction,
@@ -334,6 +336,8 @@ def main() -> None:
 
     # Text messages
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    setup_scheduler(app)
 
     app.run_polling()
 

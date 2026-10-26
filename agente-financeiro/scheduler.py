@@ -23,9 +23,7 @@ def setup_scheduler(application: Application) -> AsyncIOScheduler:
         try:
             today = datetime.now(_TZ).date()
             text = format_daily_summary(DB_PATH, today.isoformat())
-            await application.bot.send_message(
-                chat_id=TELEGRAM_GROUP_ID, text=text, parse_mode=ParseMode.MARKDOWN
-            )
+            await application.bot.send_message(chat_id=TELEGRAM_GROUP_ID, text=text)
         except Exception as exc:
             logger.error("daily_summary job error: %s", exc)
 
@@ -35,9 +33,7 @@ def setup_scheduler(application: Application) -> AsyncIOScheduler:
             first_of_month = today.replace(day=1)
             prev_month_last = first_of_month - timedelta(days=1)
             text = format_monthly_summary(DB_PATH, prev_month_last.year, prev_month_last.month)
-            await application.bot.send_message(
-                chat_id=TELEGRAM_GROUP_ID, text=text, parse_mode=ParseMode.MARKDOWN
-            )
+            await application.bot.send_message(chat_id=TELEGRAM_GROUP_ID, text=text)
         except Exception as exc:
             logger.error("monthly_summary job error: %s", exc)
 

@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
+from telegram.helpers import escape_markdown
 from telegram.ext import (
     Application,
     MessageHandler,
@@ -125,31 +126,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
 
     hoje = date.today()
+    # Security: identity and date always come from server, never from LLM output
     add_transaction(
         DB_PATH,
-        pessoa=resultado.get("pessoa", pessoa),
+        pessoa=pessoa,
         valor=resultado["valor"],
         descricao=resultado.get("descricao", ""),
         categoria=resultado.get("categoria", "outros"),
         tipo=resultado["tipo"],
-        data=resultado.get("data", hoje.isoformat()),
+        data=hoje.isoformat(),
     )
 
+    # Security: escape description to prevent Markdown injection
+    descricao_safe = escape_markdown(resultado.get("descricao", ""), version=1)
     tipo_label = "💸 Gasto" if resultado["tipo"] == "gasto" else "💰 Receita"
     msg = (
         f"{tipo_label} registrado!\n"
-        f"*{resultado.get('descricao', '')}* — R$ {resultado['valor']:.2f}\n"
+        f"*{descricao_safe}* — R$ {resultado['valor']:.2f}\n"
         f"Categoria: _{resultado.get('categoria', 'outros')}_"
     )
 
     # Category alert
-    alert = check_category_alert(
-        DB_PATH,
-        resultado.get("categoria", "outros"),
-        resultado["valor"],
-        hoje.year,
-        hoje.month,
-    )
+    try:
+        alert = check_category_alert(
+            DB_PATH,
+            resultado.get("categoria", "outros"),
+            resultado["valor"],
+            hoje.year,
+            hoje.month,
+        )
+    except Exception as e:
+        logger.warning("check_category_alert falhou: %s", e)
+        alert = None
     if alert:
         msg += f"\n\n⚠️ {alert}"
 

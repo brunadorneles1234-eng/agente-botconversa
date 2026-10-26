@@ -47,3 +47,15 @@ def test_parse_extrato_retorna_lista(mock_anthropic):
     result = parse_extrato("26/10 Supermercado Extra -120,00", "fake-key")
     assert len(result) == 1
     assert result[0]["valor"] == 120.0
+
+
+def test_parse_transaction_json_invalido_retorna_none(mock_anthropic):
+    mock_anthropic.return_value = make_mock_response("isso não é json")
+    result = parse_transaction("algum texto", "bruna", "fake-key")
+    assert result is None
+
+
+def test_parse_extrato_json_invalido_retorna_lista_vazia(mock_anthropic):
+    mock_anthropic.return_value = make_mock_response("não é json")
+    result = parse_extrato("extrato qualquer", "fake-key")
+    assert result == []

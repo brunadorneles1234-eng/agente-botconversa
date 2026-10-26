@@ -1,0 +1,15 @@
+VALID_CATEGORIES: list[str] = [
+    "fast_food",
+    "restaurante",
+    "mercado",
+    "transporte",
+    "combustivel",
+    "saude",
+    "educacao",
+    "lazer",
+    "moradia",
+    "contas",
+    "roupas",
+    "assinaturas",
+    "outros",
+]

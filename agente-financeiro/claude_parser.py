@@ -1,14 +1,6 @@
 import json
 import anthropic
-
-try:
-    from config import VALID_CATEGORIES
-except Exception:
-    VALID_CATEGORIES = [
-        "fast_food", "restaurante", "mercado", "transporte", "combustivel",
-        "saude", "educacao", "lazer", "moradia", "contas", "roupas",
-        "assinaturas", "outros",
-    ]
+from categories import VALID_CATEGORIES
 
 TRANSACTION_SYSTEM_PROMPT = """Você é um parser de transações financeiras pessoais em português.
 Dado um texto, extraia a transação financeira e retorne um JSON puro com os campos:
@@ -56,16 +48,16 @@ def _validate_transaction(item: object) -> bool:
 def parse_transaction(text: str, pessoa: str, api_key: str) -> dict | None:
     client = anthropic.Anthropic(api_key=api_key)
     system = TRANSACTION_SYSTEM_PROMPT.format(categories=", ".join(VALID_CATEGORIES))
+    response = client.messages.create(
+        model="claude-haiku-4-5",
+        max_tokens=256,
+        system=system,
+        messages=[{"role": "user", "content": f"Pessoa: {pessoa}\nMensagem: {text}"}],
+    )
     try:
-        response = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=256,
-            system=system,
-            messages=[{"role": "user", "content": f"Pessoa: {pessoa}\nMensagem: {text}"}],
-        )
         raw = response.content[0].text.strip()
         result = json.loads(raw)
-    except (json.JSONDecodeError, IndexError, Exception):
+    except (json.JSONDecodeError, IndexError):
         return None
     if result is None:
         return None
@@ -77,16 +69,16 @@ def parse_transaction(text: str, pessoa: str, api_key: str) -> dict | None:
 def parse_extrato(text: str, api_key: str) -> list[dict]:
     client = anthropic.Anthropic(api_key=api_key)
     system = EXTRATO_SYSTEM_PROMPT.format(categories=", ".join(VALID_CATEGORIES))
+    response = client.messages.create(
+        model="claude-haiku-4-5",
+        max_tokens=1024,
+        system=system,
+        messages=[{"role": "user", "content": text}],
+    )
     try:
-        response = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=1024,
-            system=system,
-            messages=[{"role": "user", "content": text}],
-        )
         raw = response.content[0].text.strip()
         result = json.loads(raw)
-    except (json.JSONDecodeError, IndexError, Exception):
+    except (json.JSONDecodeError, IndexError):
         return []
     if not isinstance(result, list):
         return []

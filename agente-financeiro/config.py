@@ -1,4 +1,5 @@
 import os
+from categories import VALID_CATEGORIES
 
 def _require(name: str) -> str:
     value = os.environ.get(name)
@@ -20,19 +21,3 @@ USER_MAP: dict[int, str] = {
     _bruna_id: "bruna",
     _renan_id: "renan",
 }
-
-VALID_CATEGORIES: list[str] = [
-    "fast_food",
-    "restaurante",
-    "mercado",
-    "transporte",
-    "combustivel",
-    "saude",
-    "educacao",
-    "lazer",
-    "moradia",
-    "contas",
-    "roupas",
-    "assinaturas",
-    "outros",
-]

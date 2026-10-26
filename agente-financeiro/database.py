@@ -104,7 +104,11 @@ def update_divida_paid(db_path: str, divida_id: int, valor_adicional: float) -> 
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cur = conn.execute("SELECT * FROM dividas WHERE id = ?", (divida_id,))
-    row = dict(cur.fetchone())
+    fetched = cur.fetchone()
+    if fetched is None:
+        conn.close()
+        raise ValueError(f"Dívida {divida_id} não encontrada")
+    row = dict(fetched)
     novo_pago = min(row["valor_pago"] + valor_adicional, row["valor_total"])
     novo_status = "quitado" if novo_pago >= row["valor_total"] else row["status"]
     with conn:

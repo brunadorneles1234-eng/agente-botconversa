@@ -1,3 +1,4 @@
+import pytest
 from database import (
     init_db, add_transaction, get_transactions_by_date,
     get_transactions_by_month, get_category_total_month,
@@ -38,6 +39,12 @@ def test_update_divida_paid_nao_excede_total(tmp_db):
     result = update_divida_paid(tmp_db, did, 600.0)
     assert result["valor_pago"] == 500.0
     assert result["status"] == "quitado"
+
+
+def test_update_divida_paid_id_inexistente(tmp_db):
+    init_db(tmp_db)
+    with pytest.raises(ValueError, match="não encontrada"):
+        update_divida_paid(tmp_db, 999, 100.0)
 
 
 def test_limit_crud(tmp_db):

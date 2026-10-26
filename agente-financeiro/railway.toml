@@ -4,3 +4,6 @@ builder = "nixpacks"
 [deploy]
 startCommand = "python bot.py"
 restartPolicyType = "on_failure"
+
+[[volumes]]
+mountPath = "/data"

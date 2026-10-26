@@ -1,6 +1,8 @@
+import asyncio
 import re
 import logging
-from datetime import date, datetime
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
@@ -74,19 +76,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # Detect extrato
     if _is_extrato(text):
         try:
-            transacoes = parse_extrato(text, ANTHROPIC_API_KEY)
+            transacoes = await asyncio.to_thread(parse_extrato, text, ANTHROPIC_API_KEY)
         except Exception as exc:
             logger.error("parse_extrato error: %s", exc)
             await update.message.reply_text(
                 "❌ Erro ao processar extrato. Tente novamente.",
-                parse_mode=ParseMode.MARKDOWN,
             )
             return
 
         if not transacoes:
             await update.message.reply_text(
                 "Não encontrei transações no extrato enviado.",
-                parse_mode=ParseMode.MARKDOWN,
             )
             return
 
@@ -111,23 +111,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Regular transaction
     try:
-        resultado = parse_transaction(text, pessoa, ANTHROPIC_API_KEY)
+        resultado = await asyncio.to_thread(parse_transaction, text, pessoa, ANTHROPIC_API_KEY)
     except Exception as exc:
         logger.error("parse_transaction error: %s", exc)
         await update.message.reply_text(
             "❌ Erro ao processar mensagem. Tente novamente.",
-            parse_mode=ParseMode.MARKDOWN,
         )
         return
 
     if resultado is None:
         await update.message.reply_text(
-            "Não entendi. Ex: *gastei R$45 no iFood* ou *recebi salário R$4500*",
-            parse_mode=ParseMode.MARKDOWN,
+            "Não entendi. Ex: gastei R$45 no iFood ou recebi salário R$4500",
         )
         return
 
-    hoje = date.today()
+    hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
     # Security: identity and date always come from server, never from LLM output
     add_transaction(
         DB_PATH,
@@ -139,13 +137,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         data=hoje.isoformat(),
     )
 
-    # Security: escape description to prevent Markdown injection
-    descricao_safe = escape_markdown(resultado.get("descricao", ""), version=1)
-    tipo_label = "💸 Gasto" if resultado["tipo"] == "gasto" else "💰 Receita"
+    tipo_label = "💸 Gasto" if resultado["tipo"] == "despesa" else "💰 Receita"
     msg = (
         f"{tipo_label} registrado!\n"
-        f"*{descricao_safe}* — R$ {resultado['valor']:.2f}\n"
-        f"Categoria: _{resultado.get('categoria', 'outros')}_"
+        f"{resultado.get('descricao', '')} — R$ {resultado['valor']:.2f}\n"
+        f"Categoria: {resultado.get('categoria', 'outros')}"
     )
 
     # Category alert
@@ -163,7 +159,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if alert:
         msg += f"\n\n⚠️ {alert}"
 
-    await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(msg)
 
 
 async def handle_extrato_confirm(
@@ -190,18 +186,18 @@ async def handle_extrato_confirm(
     # confirm
     transacoes = data["transacoes"]
     pessoa_extrato = data.get("pessoa", pessoa)
-    hoje = date.today()
+    hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
     registradas = 0
     for t in transacoes:
         try:
             add_transaction(
                 DB_PATH,
-                pessoa=t.get("pessoa", pessoa_extrato),
+                pessoa=pessoa_extrato,
                 valor=t["valor"],
                 descricao=t.get("descricao", ""),
                 categoria=t.get("categoria", "outros"),
                 tipo=t["tipo"],
-                data=t.get("data", hoje.isoformat()),
+                data=hoje.isoformat(),
             )
             registradas += 1
         except Exception as exc:
@@ -221,18 +217,18 @@ async def cmd_resumo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     pessoa = _get_pessoa(update)
     if pessoa is None:
         return
-    hoje = date.today()
+    hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
     msg = format_monthly_summary(DB_PATH, hoje.year, hoje.month)
-    await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(msg)
 
 
 async def cmd_hoje(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     pessoa = _get_pessoa(update)
     if pessoa is None:
         return
-    hoje = date.today()
+    hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
     msg = format_daily_summary(DB_PATH, hoje.isoformat())
-    await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(msg)
 
 
 async def cmd_dividas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -240,7 +236,7 @@ async def cmd_dividas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if pessoa is None:
         return
     msg = format_dividas(DB_PATH)
-    await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(msg)
 
 
 async def cmd_limite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
